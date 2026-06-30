@@ -4,8 +4,10 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.perfulandia.autenticacion.client.UsuarioClient;
 import com.perfulandia.autenticacion.dto.LoginRequest;
 import com.perfulandia.autenticacion.dto.LoginResponse;
+import com.perfulandia.autenticacion.dto.UsuarioAuthResponse;
 import com.perfulandia.autenticacion.dto.ValidarTokenResponse;
 
 import io.jsonwebtoken.Claims;
@@ -14,38 +16,33 @@ import io.jsonwebtoken.Claims;
 public class AuthService {
 
     private final JwtService jwtService;
+    private final UsuarioClient usuarioClient;
 
-    public AuthService(JwtService jwtService) {
+    public AuthService(JwtService jwtService, UsuarioClient usuarioClient) {
         this.jwtService = jwtService;
+        this.usuarioClient = usuarioClient;
     }
 
     public LoginResponse login(LoginRequest request) {
-        String correo = request.getCorreo().trim().toLowerCase();
-        String password = request.getPassword();
+        UsuarioAuthResponse usuario = usuarioClient.validarCredenciales(request);
 
-        if (!"admin@perfulandia.cl".equals(correo) || !"admin123".equals(password)) {
-            throw new RuntimeException("Credenciales inválidas");
-        }
+        List<String> permisos = usuario.getPermisos() != null
+                ? usuario.getPermisos()
+                : List.of();
 
-        Long idUsuario = 1L;
-        String rol = "ADMINISTRADOR";
-        List<String> permisos = List.of(
-                "CREAR_USUARIO",
-                "EDITAR_USUARIO",
-                "ELIMINAR_USUARIO",
-                "VER_USUARIOS",
-                "GESTIONAR_ROLES",
-                "GESTIONAR_PERMISOS"
+        String token = jwtService.generarToken(
+                usuario.getIdUsuario(),
+                usuario.getCorreo(),
+                usuario.getRol(),
+                permisos
         );
-
-        String token = jwtService.generarToken(idUsuario, correo, rol, permisos);
 
         return new LoginResponse(
                 token,
                 "Bearer",
-                idUsuario,
-                correo,
-                rol,
+                usuario.getIdUsuario(),
+                usuario.getCorreo(),
+                usuario.getRol(),
                 permisos
         );
     }

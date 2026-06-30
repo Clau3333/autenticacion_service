@@ -1,13 +1,15 @@
 package com.perfulandia.autenticacion.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.mock;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.perfulandia.autenticacion.dto.LoginRequest;
+import com.perfulandia.autenticacion.client.UsuarioClient;
 
 class AuthServiceBranchTest {
 
@@ -26,16 +28,7 @@ class AuthServiceBranchTest {
 
         ReflectionTestUtils.setField(jwtService, "expirationMinutes", 60L);
 
-        authService = new AuthService(jwtService);
-    }
-
-    @Test
-    void login_deberiaLanzarErrorCuandoCorreoEsInvalido() {
-        LoginRequest request = new LoginRequest("otro@perfulandia.cl", "admin123");
-
-        RuntimeException ex = assertThrows(RuntimeException.class, () -> authService.login(request));
-
-        assertEquals("Credenciales inválidas", ex.getMessage());
+        authService = new AuthService(jwtService, mock(UsuarioClient.class));
     }
 
     @Test
@@ -47,8 +40,22 @@ class AuthServiceBranchTest {
                 null
         );
 
-        boolean permitido = authService.tienePermiso(token, "CREAR_USUARIO");
+        boolean permitido = authService.tienePermiso(token, "GESTIONAR_USUARIOS");
 
         assertFalse(permitido);
+    }
+
+    @Test
+    void tienePermiso_deberiaRetornarTrueConPermisoRealDesdeUsuarioService() {
+        String token = jwtService.generarToken(
+                1L,
+                "admin@perfulandia.cl",
+                "ADMINISTRADOR",
+                List.of("GESTIONAR_USUARIOS")
+        );
+
+        boolean permitido = authService.tienePermiso(token, "GESTIONAR_USUARIOS");
+
+        assertTrue(permitido);
     }
 }

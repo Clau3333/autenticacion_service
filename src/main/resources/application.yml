@@ -9,3 +9,6 @@ app:
   jwt:
     secret: "perfulandia-clave-secreta-para-firmar-tokens-jwt-2026"
     expiration-minutes: 60
+
+  usuario-service:
+    url: "http://localhost:8082"
