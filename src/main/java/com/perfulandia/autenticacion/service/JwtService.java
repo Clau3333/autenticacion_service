@@ -60,11 +60,13 @@ public class JwtService {
             return null;
         }
 
-        if (token.startsWith("Bearer ")) {
-            return token.substring(7);
+        String tokenLimpio = token.trim();
+
+        if (tokenLimpio.toLowerCase().startsWith("bearer ")) {
+            return tokenLimpio.substring(7).trim();
         }
 
-        return token;
+        return tokenLimpio;
     }
 
     private SecretKey obtenerClave() {
